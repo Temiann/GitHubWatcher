@@ -18,11 +18,20 @@ import java.util.Observable;
 public class GitHubWatcher extends Observable implements Runnable {
     private final String repoUrl;
     private final String authToken;
+    private int time = 60000;
     private String lastCommitSha;
 
+    public GitHubWatcher(){
+        this.repoUrl = "";
+        this.authToken = "";
+    }
     public GitHubWatcher(String repoUrl, String authToken) {
         this.repoUrl = repoUrl;
         this.authToken = authToken;
+    }
+
+    public void setTime(int time) {
+        this.time = time;
     }
 
     @Override
@@ -50,7 +59,6 @@ public class GitHubWatcher extends Observable implements Runnable {
                             if (!commitSha.equals(lastCommitSha)) {
                                 lastCommitSha = commitSha;
 
-                                // Извлечение нужной информации из коммита
                                 JsonObject commit = latestCommit.getAsJsonObject("commit");
                                 JsonObject author = commit.getAsJsonObject("author");
                                 String authorName = author.get("name").getAsString();
@@ -67,7 +75,7 @@ public class GitHubWatcher extends Observable implements Runnable {
                     }
                 }
 
-                Thread.sleep(60000); // Check every 60 seconds
+                Thread.sleep(time); // Check every 60 seconds
             } catch (Exception e) {
                 e.printStackTrace();
             }
