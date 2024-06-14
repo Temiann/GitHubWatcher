@@ -8,11 +8,15 @@ import java.util.Observer;
 
 public class RepoObserver implements Observer {
     private Bot bot;
-    private String chatId;
+    private final String chatId;
 
     public RepoObserver(Bot bot, String chatId) {
         this.bot = bot;
         this.chatId = chatId;
+    }
+
+    public void setBot(Bot bot) {
+        this.bot = bot;
     }
 
     @Override

@@ -50,7 +50,6 @@ public class GitHubWatcher extends Observable implements Runnable {
                             if (!commitSha.equals(lastCommitSha)) {
                                 lastCommitSha = commitSha;
 
-                                // Извлечение нужной информации из коммита
                                 JsonObject commit = latestCommit.getAsJsonObject("commit");
                                 JsonObject author = commit.getAsJsonObject("author");
                                 String authorName = author.get("name").getAsString();

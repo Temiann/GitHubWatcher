@@ -1,29 +1,33 @@
 package org.example.bot;
 
 import org.example.botconfig.BotConfig;
+import org.example.git.GitHubWatcher;
+import org.example.observer.RepoObserver;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Bot extends TelegramLongPollingBot {
+    private final Map<String, GitHubWatcher> watchers = new HashMap<>();
+    private final RepoObserver observer;
 
-    private final String botUsername;
-    private final String botToken;
-
-    public Bot(String botUsername, String botToken) {
-        this.botUsername = botUsername;
-        this.botToken = botToken;
+    public Bot(String botUsername, String botToken, RepoObserver observer) {
+        super();
+        this.observer = observer;
     }
 
     @Override
     public String getBotUsername() {
-        return botUsername;
+        return BotConfig.BOT_NAME;
     }
 
     @Override
     public String getBotToken() {
-        return botToken;
+        return BotConfig.BOT_TOKEN;
     }
 
     @Override
@@ -32,9 +36,13 @@ public class Bot extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
             String username = update.getMessage().getChat().getFirstName();
+
             if (messageText.equals("/start")) {
-                String answer = "Привет, " + username + "! Ваш Chat ID: " + chatId;
+                String answer = "Привет! " + username;
                 sendMessage(chatId, answer);
+            } else if (messageText.startsWith("/addrepo ")) {
+                String repoUrl = messageText.split(" ")[1];
+                addRepo(repoUrl, chatId);
             }
         }
     }
@@ -48,6 +56,19 @@ public class Bot extends TelegramLongPollingBot {
             execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void addRepo(String repoUrl, long chatId) {
+        if (!watchers.containsKey(repoUrl)) {
+            GitHubWatcher watcher = new GitHubWatcher(repoUrl, BotConfig.GITHUB_TOKEN);
+            watcher.addObserver(observer);
+            Thread thread = new Thread(watcher);
+            thread.start();
+            watchers.put(repoUrl, watcher);
+            sendMessage(chatId, "Репозиторий " + repoUrl + " добавлен для отслеживания.");
+        } else {
+            sendMessage(chatId, "Репозиторий " + repoUrl + " уже отслеживается.");
         }
     }
 }
